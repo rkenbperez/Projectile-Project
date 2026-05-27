@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projectile Motion Visualizer</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
+    
+    <link href="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.css" rel="stylesheet" />
+    
+    <style>
+        .chart-container img {
+            width: 100%;
+            height: auto;
+            max-height: 400px;
+            object-fit: contain;
+        }
+        
+        * {
+            transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900">
+
+    <!-- Navbar -->
+    <nav class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-2.5 fixed w-full z-20 top-0 left-0">
+        <div class="container mx-auto flex flex-wrap items-center justify-between">
+            <a href="/" class="flex items-center">
+                <span class="self-center text-xl font-semibold whitespace-nowrap text-green-700 dark:text-green-400">Projectile Motion Visualizer</span>
+            </a>
+            <div class="flex items-center space-x-3">
+                <button id="theme-toggle" type="button" class="p-2 text-gray-500 rounded-lg hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-600">
+                    <svg id="theme-toggle-dark-icon" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+                    </svg>
+                    <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 pt-24 pb-8">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-extrabold text-gray-900 dark:text-white mb-2">Projectile Motion Calculator</h1>
+            <p class="text-lg text-gray-600 dark:text-gray-400">Calculate trajectory, maximum height, range, and visualize projectile motion</p>
+        </div>
+
+        <!-- Input Form -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 mb-8">
+            <div class="bg-gray-50 dark:bg-gray-700 rounded-t-lg border-b border-gray-200 dark:border-gray-600 px-6 py-4">
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Input Parameters</h2>
+            </div>
+            <div class="p-6">
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Angle of launch (degrees)</label>
+                            <input type="number" name="angle" value="{{ angle|default:'45' }}" required class="w-full p-2.5 rounded-lg border bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-green-500 focus:border-green-500">
+                        </div>
+                        <div>
+                            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Initial velocity (m/s)</label>
+                            <input type="number" name="velocity" value="{{ velocity|default:'100' }}" required class="w-full p-2.5 rounded-lg border bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-green-500 focus:border-green-500">
+                        </div>
+                        <div>
+                            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Initial height (meters)</label>
+                            <input type="number" name="initial_height" value="{{ h1|default:'0' }}" required class="w-full p-2.5 rounded-lg border bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-green-500 focus:border-green-500">
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <button type="submit" class="w-full text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-green-600 dark:hover:bg-green-700 transition">
+                            Calculate
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        {% if results %}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Results Card -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
+                <div class="bg-gray-50 dark:bg-gray-700 rounded-t-lg border-b border-gray-200 dark:border-gray-600 px-6 py-4">
+                    <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Results</h2>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
+                            <span class="text-gray-600 dark:text-gray-400">Initial Horizontal Velocity</span>
+                            <span class="font-bold text-green-700 dark:text-green-400">{{ results.v0x }} m/s</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
+                            <span class="text-gray-600 dark:text-gray-400">Initial Vertical Velocity</span>
+                            <span class="font-bold text-green-700 dark:text-green-400">{{ results.v0y }} m/s</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
+                            <span class="text-gray-600 dark:text-gray-400">Final Horizontal Velocity</span>
+                            <span class="font-bold text-green-700 dark:text-green-400">{{ results.vFx }} m/s</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
+                            <span class="text-gray-600 dark:text-gray-400">Final Vertical Velocity</span>
+                            <span class="font-bold text-green-700 dark:text-green-400">{{ results.vFy }} m/s</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
+                            <span class="text-gray-600 dark:text-gray-400">Maximum Height</span>
+                            <span class="font-bold text-green-700 dark:text-green-400">{{ results.max_height }} m</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
+                            <span class="text-gray-600 dark:text-gray-400">Horizontal Range</span>
+                            <span class="font-bold text-green-700 dark:text-green-400">{{ results.horizontal_range }} m</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
+                            <span class="text-gray-600 dark:text-gray-400">Time of Flight</span>
+                            <span class="font-bold text-green-700 dark:text-green-400">{{ results.time_of_flight }} s</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2">
+                            <span class="text-gray-600 dark:text-gray-400">Time to Max Height</span>
+                            <span class="font-bold text-green-700 dark:text-green-400">{{ results.time_to_max }} s</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Graph Card -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
+                <div class="bg-gray-50 dark:bg-gray-700 rounded-t-lg border-b border-gray-200 dark:border-gray-600 px-6 py-4">
+                    <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Height vs Time Graph</h2>
+                </div>
+                <div class="p-6">
+                    <div class="chart-container">
+                        <img src="data:image/png;base64,{{ graph }}" alt="Height vs Time Graph" class="w-full rounded-lg">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Derivative Analysis Card -->
+        <div class="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
+            <div class="bg-gray-50 dark:bg-gray-700 rounded-t-lg border-b border-gray-200 dark:border-gray-600 px-6 py-4">
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Derivative Analysis</h2>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">First and second derivative calculations</p>
+            </div>
+            <div class="p-6">
+                <div class="mb-4 p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                    <p class="text-gray-700 dark:text-gray-300">
+                        <strong>Acceleration (second derivative):</strong> {{ derivatives.acceleration }} m/s²
+                        <span class="text-sm text-gray-500 ml-2">(Constant - gravity)</span>
+                    </p>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                            <tr>
+                                <th class="px-4 py-2">Time (s)</th>
+                                <th class="px-4 py-2">Velocity (m/s)</th>
+                                <th class="px-4 py-2">Acceleration (m/s²)</th>
+                                <th class="px-4 py-2">Direction</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in derivatives.rate_of_change %}
+                            <tr class="border-b dark:border-gray-600">
+                                <td class="px-4 py-2">{{ row.time }}</td>
+                                <td class="px-4 py-2">{{ row.velocity }}</td>
+                                <td class="px-4 py-2">{{ row.acceleration }}</td>
+                                <td class="px-4 py-2">
+                                    {% if row.velocity > 0 %}
+                                        <span class="text-blue-600 dark:text-blue-400">Upward</span>
+                                    {% elif row.velocity == 0 %}
+                                        <span class="text-yellow-600 dark:text-yellow-400">Peak (v = 0)</span>
+                                    {% else %}
+                                        <span class="text-orange-600 dark:text-orange-400">Downward</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="mt-4 p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                    <p class="text-sm text-gray-700 dark:text-gray-300">
+                        <strong>Derivative verification:</strong> Maximum height occurs when 
+                        <code class="bg-gray-200 dark:bg-gray-600 px-1 rounded">dh/dt = velocity = 0</code> at 
+                        <strong>{{ derivatives.t_max_height }} seconds</strong>
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Dark Mode Script -->
+    <script>
+        // Check for saved preference on load
+        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+        
+        // Toggle button functionality
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
+        const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
+        
+        // Set initial icon states
+        if (document.documentElement.classList.contains('dark')) {
+            themeToggleDarkIcon.classList.add('hidden');
+            themeToggleLightIcon.classList.remove('hidden');
+        } else {
+            themeToggleDarkIcon.classList.remove('hidden');
+            themeToggleLightIcon.classList.add('hidden');
+        }
+        
+        themeToggleBtn.addEventListener('click', function() {
+            // Toggle icons
+            themeToggleDarkIcon.classList.toggle('hidden');
+            themeToggleLightIcon.classList.toggle('hidden');
+            
+            // Toggle dark class on html element
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('color-theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('color-theme', 'dark');
+            }
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.js"></script>
+</body>
+</html>
